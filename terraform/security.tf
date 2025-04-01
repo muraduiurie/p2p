@@ -69,3 +69,61 @@ resource "aws_security_group" "kubernetes_vm_sg" {
     Name = "kubernetes-vm-sg"
   }
 }
+
+resource "aws_security_group" "nfs_vm_sg" {
+  name        = "nfs-vm-group"
+  description = "Allow necessary ports for NFS server"
+
+  ingress {
+    description = "Allow SSH from anywhere"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # NFS - TCP ports
+  ingress {
+    description = "Allow NFS TCP"
+    from_port   = 2049
+    to_port     = 2049
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow RPC bind TCP"
+    from_port   = 111
+    to_port     = 111
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # NFS - UDP ports (needed for some setups)
+  ingress {
+    description = "Allow NFS UDP"
+    from_port   = 2049
+    to_port     = 2049
+    protocol    = "udp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow RPC bind UDP"
+    from_port   = 111
+    to_port     = 111
+    protocol    = "udp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "nfs-vm-sg"
+  }
+}

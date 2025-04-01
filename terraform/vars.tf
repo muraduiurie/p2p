@@ -4,10 +4,16 @@ variable "ami" {
     default     = "ami-031e7dbab5571668f" # Ubuntu 22.04 LTS
 }
 
-variable "instance_type" {
+variable "kube_instance_type" {
   type        = string
-  description = "AWS EC2 instance type"
+  description = "Kubernetes AWS EC2 instance type"
   default     = "t3.micro"
+}
+
+variable "nfs_instance_type" {
+    type        = string
+    description = "NFS AWS EC2 instance type"
+    default     = "t3.micro"
 }
 
 variable "key_name" {

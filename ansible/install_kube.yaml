@@ -51,6 +51,7 @@
           - software-properties-common
           - apt-transport-https
           - ca-certificates
+          - nfs-common
         state: present
 
     - name: Add Docker GPG key
@@ -151,3 +152,7 @@
     - name: Install Calico network plugin
       become: false
       command: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/calico.yaml
+
+    - name: Untaint nodes
+      become: false
+      command: kubectl taint nodes --all node-role.kubernetes.io/control-plane:NoSchedule-

@@ -18,17 +18,66 @@ Use the tools you would in a production environment to show us your skillset, ap
 
 ### Infrastructure
 
-- Deploy an AWS VM using terraform.
+- Deploy two AWS VMs using terraform.
 - Deploy Kubernetes single node cluster using ansible and kubeadm.
+- Deploy NFS server on the second VM.
 
-### Steps:
+#### Steps:
 
 - Clone the repository.
 - Change the directory to `terraform`.
+- Create a file `terraform.tfvars` with the following content:
+
+```hcl
+ami = "ami-123456789abcdefg"
+kube_instance_type = "t3.medium"
+nfs_instance_type = "t3.medium"
+key_name = "nmy-private-key-name"
+profile = "aws-profile"
+key_path = "/path/to/private/key"
+```
 - make sure the AWS key pair is added to private keys and has the same name as the one on AWS.
 - Run `terraform init`.
-- Run `terraform apply`. This will create an EC2 instance and install Kubernetes cluster `v1.31` on it. At the end of the process, it will create a file `admin.conf` that can be used to connect to cluster..
+- Run `terraform apply`. 
 
+This will create two EC2 instances, install Kubernetes cluster `v1.31` on one machine and NFS server on another machine. At the end of the process, it will create a file `admin.conf` that can be used to connect to cluster. The NFS machine will be used to create PVCs on the Kubernetes cluster.
+
+- Deploy NFS subdir external provisioner on the Kubernetes cluster.
+
+Once the Kubernetes cluster is up and running, run the following commands:
+
+```bash
+helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+helm repo update
+helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner -n kube-system --set nfs.server=<NFS_SERVER_IP> --set nfs.path=/srv/nfs_share
+```
+
+- Replace the `KUBERNETES_NODE_PUBLIC_IP` variable and deploy `MetalLB` on the Kubernetes cluster.
+```bash
+helm repo add metallb https://metallb.github.io/metallb
+helm repo update
+helm install metallb metallb/metallb --namespace metallb-system --create-namespace
+
+IP="<KUBERNETES_NODE_PUBLIC_IP>/32" && \
+cat <<EOF | envsubst | kubectl apply -f -
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: single-ip
+  namespace: metallb-system
+spec:
+  addresses:
+    - \$IP
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: l2
+  namespace: metallb-system
+spec: {}
+EOF
+```
 ## Improvements
 
 - Keep terraform state in S3 bucket.
+- Deploy storage using Rook Ceph for better performance and reliability.
