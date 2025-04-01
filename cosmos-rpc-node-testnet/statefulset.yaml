@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: gaia-node
+spec:
+  serviceName: gaia
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gaia-node
+  template:
+    metadata:
+      labels:
+        app: gaia-node
+    spec:
+      containers:
+        - name: gaia
+          image: "ghcr.io/cosmos/gaia:nightly"
+          command:
+            - gaiad
+            - start
+          ports:
+            - containerPort: 26656 # P2P
+            - containerPort: 26657 # RPC
+          volumeMounts:
+            - name: gaia-data
+              mountPath: /root/.gaia/data
+            - name: gaia-config
+              mountPath: /root/.gaia/config
+      volumes:
+        - name: gaia-data
+          persistentVolumeClaim:
+            claimName: gaia-data
+        - name: gaia-config
+          configMap:
+            name: gaia-testnet-config
